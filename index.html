@@ -20,7 +20,6 @@
       --cell:#0b131c;
       --focus:#3aa0ff;
     }
-
     *{ box-sizing:border-box; }
     body{
       margin:0;
@@ -28,7 +27,6 @@
       background: linear-gradient(180deg, #070a0f 0%, var(--bg) 100%);
       color:var(--text);
     }
-
     header{
       position: sticky; top:0;
       background: rgba(11,15,20,.92);
@@ -37,14 +35,12 @@
       padding: 12px 16px;
       z-index: 5;
     }
-
     .hdrRow{
       display:flex;
       gap:12px;
       align-items:center;
       flex-wrap:wrap;
     }
-
     .pill{
       background: rgba(26,38,52,.9);
       border:1px solid var(--line);
@@ -74,23 +70,19 @@
       background: linear-gradient(180deg, #1d7a41 0%, #155a31 100%);
       border-color: rgba(31,143,74,.6);
     }
-    .btnGhost{
-      background: transparent;
-    }
+    .btnGhost{ background: transparent; }
 
     .wrap{
       padding: 16px;
-      max-width: 1400px;
+      max-width: 1500px;
       margin: 0 auto;
     }
-
     .layout{
       display:grid;
-      grid-template-columns: 1.4fr .6fr;
+      grid-template-columns: 1.45fr .55fr;
       gap: 14px;
       align-items:start;
     }
-
     .card{
       background: linear-gradient(180deg, var(--panel) 0%, var(--panel2) 100%);
       border:1px solid var(--line);
@@ -98,12 +90,7 @@
       box-shadow: var(--shadow);
       padding: 14px;
     }
-
-    h2{
-      margin: 0 0 10px 0;
-      font-size: 16px;
-      letter-spacing: .2px;
-    }
+    h2{ margin: 0 0 10px 0; font-size: 16px; letter-spacing: .2px; }
     .sub{
       margin-top:-6px;
       margin-bottom:12px;
@@ -112,21 +99,18 @@
       line-height: 1.35;
     }
 
-    /* GRID TABLE */
     .tableWrap{
       overflow:auto;
       border:1px solid var(--line);
       border-radius: 12px;
       background: rgba(8,12,18,.35);
     }
-
     table{
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
-      min-width: 950px;
+      min-width: 1150px;
     }
-
     thead th{
       position: sticky;
       top: 0;
@@ -138,7 +122,6 @@
       padding: 10px 8px;
       white-space: nowrap;
     }
-
     thead th:first-child{
       text-align:left;
       padding-left: 12px;
@@ -171,9 +154,6 @@
       font-weight: 850;
       border-top: 1px solid var(--line);
     }
-    tfoot td:first-child{
-      z-index: 1;
-    }
 
     .cellInput{
       width: 100%;
@@ -201,7 +181,6 @@
     .muted{ color: var(--muted); }
     .hr{ height:1px; background: var(--line); margin: 12px 0; }
 
-    /* Bundles panel */
     .alert{
       border:1px solid var(--line);
       border-radius: 12px;
@@ -213,10 +192,7 @@
       background: rgba(31,143,74,.10);
       border-color: rgba(31,143,74,.6);
     }
-    .alertTitle{
-      font-weight: 900;
-      margin-bottom: 6px;
-    }
+    .alertTitle{ font-weight: 900; margin-bottom: 6px; }
     .row{
       display:flex;
       gap:10px;
@@ -224,7 +200,6 @@
       justify-content: space-between;
       flex-wrap:wrap;
     }
-
     .small{ font-size: 13px; }
     .bundleItem{
       border:1px solid var(--line);
@@ -233,17 +208,22 @@
       background: rgba(8,12,18,.35);
       margin-top: 8px;
     }
-
     .note{
       font-size: 12px;
       color: var(--muted);
       line-height: 1.35;
       margin-top: 10px;
     }
+    .right{
+      text-align:right;
+    }
+    .twoLine{
+      line-height: 1.2;
+    }
+    .twoLine .muted{ font-size: 12px; }
 
     @media (max-width: 1100px){
       .layout{ grid-template-columns: 1fr; }
-      table{ min-width: 900px; }
     }
   </style>
 </head>
@@ -264,10 +244,10 @@
   <div class="layout">
     <!-- GRID -->
     <div class="card">
-      <h2>Lots grid</h2>
+      <h2>Lots grid (notes + coins)</h2>
       <div class="sub">
-        Type counts into the grid. Any non-empty number “locks in” automatically (green outline).
-        <strong>Enter</strong> / <strong>Tab</strong> moves forward; <strong>Shift+Enter</strong> / <strong>Shift+Tab</strong> moves backward.
+        Type counts into the grid. Any non-empty number “locks in” automatically (green outline).<br/>
+        Navigation: <strong>Enter</strong> moves <strong>down</strong> (same lot column). <strong>Shift+Enter</strong> moves up. Tab/Shift+Tab still work.
       </div>
 
       <div class="tableWrap">
@@ -275,15 +255,15 @@
       </div>
 
       <div class="note">
-        Notes are treated as <strong>mixed</strong> across lots for bundling. The app computes the mixed “unbundled bank pile” as:
-        (sum of all lot counts) minus (bundles already extracted).
+        Bundling is <strong>notes only</strong> (85 of the same denomination). Coins are tracked for totals but never bundled.
+        “Left (unbundled)” reflects what remains after bundles are extracted.
       </div>
     </div>
 
     <!-- BUNDLES -->
     <div class="card">
-      <h2>85-note bundles</h2>
-      <div class="sub">Bundles are always a single denomination (85 notes). Extract when ready and rubber-band the pile.</div>
+      <h2>85-note bundles (notes only)</h2>
+      <div class="sub">When a note denomination has 85+ unbundled, extract and rubber-band that pile.</div>
 
       <div id="alerts"></div>
 
@@ -296,7 +276,7 @@
       <div id="bundleLog"></div>
 
       <div class="note" id="negWarn" style="display:none;">
-        <strong style="color:#ffb4b4;">Warning:</strong> One or more denominations went negative after bundles (usually caused by editing lot counts down after extracting).
+        <strong style="color:#ffb4b4;">Warning:</strong> One or more note denominations went negative after bundles (usually caused by editing lot counts down after extracting).
         Fix by adjusting the grid back up, or undo bundles.
       </div>
     </div>
@@ -305,10 +285,14 @@
 
 <script>
 (() => {
-  const DENOMS = [100, 50, 20, 10, 5];
+  // Notes (bundled) + coins (tracked only)
+  const NOTES = [100, 50, 20, 10, 5];
+  const COINS = [2, 1, 0.5, 0.2, 0.1]; // $2, $1, 50c, 20c, 10c
+  const ALL = [...NOTES, ...COINS];
+
   const LOTS = Array.from({length: 10}, (_, i) => `Lot ${i+1}`);
   const BUNDLE_SIZE = 85;
-  const LS_KEY = "banking85_grid_v1";
+  const LS_KEY = "banking85_grid_v2";
 
   const el = {
     gridTable: document.getElementById("gridTable"),
@@ -325,12 +309,11 @@
   };
 
   const defaultState = () => ({
-    version: 1,
+    version: 2,
     createdAt: new Date().toISOString(),
-    // counts[denom][lotIndex] = number
-    counts: Object.fromEntries(DENOMS.map(d => [d, Array(10).fill(0)])),
-    // locked[denom][lotIndex] = boolean (purely UI)
-    locked: Object.fromEntries(DENOMS.map(d => [d, Array(10).fill(false)])),
+    // counts[value][lotIndex] = number of units (notes/coins)
+    counts: Object.fromEntries(ALL.map(v => [String(v), Array(10).fill(0)])),
+    locked: Object.fromEntries(ALL.map(v => [String(v), Array(10).fill(false)])),
     // bundles: {ts, denom, count:85, value}
     bundles: []
   });
@@ -355,20 +338,29 @@
       hr.appendChild(th);
     });
 
-    const thTotal = document.createElement("th");
-    thTotal.textContent = "Row total";
-    hr.appendChild(thTotal);
+    // “Entered” + “Left” + “Value”
+    const thEntered = document.createElement("th");
+    thEntered.textContent = "Entered (count)";
+    hr.appendChild(thEntered);
+
+    const thLeft = document.createElement("th");
+    thLeft.textContent = "Left (unbundled)";
+    hr.appendChild(thLeft);
+
+    const thVal = document.createElement("th");
+    thVal.textContent = "Entered ($)";
+    hr.appendChild(thVal);
 
     thead.appendChild(hr);
     table.appendChild(thead);
 
     const tbody = document.createElement("tbody");
 
-    DENOMS.forEach((denom) => {
+    ALL.forEach((denom) => {
       const tr = document.createElement("tr");
 
       const tdLabel = document.createElement("td");
-      tdLabel.textContent = `$${denom}`;
+      tdLabel.textContent = denomLabel(denom);
       tr.appendChild(tdLabel);
 
       for (let c = 0; c < 10; c++){
@@ -382,45 +374,55 @@
         inp.dataset.denom = String(denom);
         inp.dataset.lot = String(c);
 
-        inp.value = state.counts[denom][c] ? String(state.counts[denom][c]) : "";
+        const v = state.counts[String(denom)][c] || 0;
+        inp.value = v ? String(v) : "";
 
-        if (state.locked[denom][c] && inp.value !== "") inp.classList.add("locked");
+        if (state.locked[String(denom)][c] && inp.value !== "") inp.classList.add("locked");
 
-        // Commit on blur (auto-lock if not empty)
         inp.addEventListener("blur", () => commitCell(inp));
 
-        // Commit on Enter, then move like Tab
+        // ENTER moves DOWN (same lot column). Shift+Enter moves UP.
         inp.addEventListener("keydown", (e) => {
           if (e.key === "Enter"){
             e.preventDefault();
             commitCell(inp);
-            moveFocus(inp, e.shiftKey ? -1 : +1);
+            moveFocusVertical(inp, e.shiftKey ? -1 : +1);
           }
         });
 
-        // If user clears field, unlock immediately (but commit on blur/enter will zero it)
         inp.addEventListener("input", () => {
-          if (inp.value === ""){
-            inp.classList.remove("locked");
-          }
+          if (inp.value === "") inp.classList.remove("locked");
         });
 
         td.appendChild(inp);
         tr.appendChild(td);
       }
 
-      const tdRowTotal = document.createElement("td");
-      tdRowTotal.className = "mono";
-      tdRowTotal.dataset.rowTotal = String(denom);
-      tdRowTotal.style.fontWeight = "850";
-      tr.appendChild(tdRowTotal);
+      // Entered count cell
+      const tdEntered = document.createElement("td");
+      tdEntered.className = "mono right";
+      tdEntered.dataset.enteredCount = String(denom);
+      tr.appendChild(tdEntered);
+
+      // Left unbundled cell
+      const tdLeft = document.createElement("td");
+      tdLeft.className = "mono right";
+      tdLeft.dataset.leftCount = String(denom);
+      tr.appendChild(tdLeft);
+
+      // Entered value cell
+      const tdVal = document.createElement("td");
+      tdVal.className = "mono right";
+      tdVal.dataset.enteredValue = String(denom);
+      tdVal.style.fontWeight = "850";
+      tr.appendChild(tdVal);
 
       tbody.appendChild(tr);
     });
 
     table.appendChild(tbody);
 
-    // Footer: column totals + session total
+    // Footer: lot totals + session total
     const tfoot = document.createElement("tfoot");
     const fr = document.createElement("tr");
 
@@ -430,13 +432,23 @@
 
     for (let c = 0; c < 10; c++){
       const td = document.createElement("td");
-      td.className = "mono";
+      td.className = "mono right";
       td.dataset.colTotal = String(c);
       fr.appendChild(td);
     }
 
+    const fEntered = document.createElement("td");
+    fEntered.className = "mono right";
+    fEntered.textContent = ""; // totals columns not needed here
+    fr.appendChild(fEntered);
+
+    const fLeft = document.createElement("td");
+    fLeft.className = "mono right";
+    fLeft.textContent = "";
+    fr.appendChild(fLeft);
+
     const grand = document.createElement("td");
-    grand.className = "mono";
+    grand.className = "mono right";
     grand.dataset.grandTotal = "1";
     fr.appendChild(grand);
 
@@ -445,13 +457,12 @@
   }
 
   function commitCell(inp){
-    const denom = Number(inp.dataset.denom);
+    const denom = inp.dataset.denom;
     const lot = Number(inp.dataset.lot);
 
     const raw = inp.value;
     const n = raw === "" ? 0 : Math.max(0, Math.floor(Number(raw)));
 
-    // normalize display (blank for zero to speed scanning)
     if (n === 0){
       inp.value = "";
       state.locked[denom][lot] = false;
@@ -467,74 +478,97 @@
     render();
   }
 
-  function moveFocus(currentInput, dir){
-    const inputs = Array.from(document.querySelectorAll(".cellInput"));
-    const idx = inputs.indexOf(currentInput);
-    if (idx < 0) return;
+  // ENTER navigation: vertical (down same lot / column). Wrap to next lot at bottom.
+  function moveFocusVertical(currentInput, dir){
+    const denom = currentInput.dataset.denom;
+    const lot = Number(currentInput.dataset.lot);
 
-    let next = idx + dir;
-    if (next < 0) next = 0;
-    if (next >= inputs.length) next = inputs.length - 1;
+    const rowIndex = ALL.findIndex(v => String(v) === denom);
+    if (rowIndex < 0) return;
 
-    inputs[next].focus();
-    inputs[next].select();
+    let nextRow = rowIndex + dir;
+    let nextLot = lot;
+
+    if (nextRow >= ALL.length){
+      nextRow = 0;
+      nextLot = Math.min(9, lot + 1);
+    } else if (nextRow < 0){
+      nextRow = ALL.length - 1;
+      nextLot = Math.max(0, lot - 1);
+    }
+
+    const nextDenom = String(ALL[nextRow]);
+    const sel = `.cellInput[data-denom="${cssEscape(nextDenom)}"][data-lot="${nextLot}"]`;
+    const nextEl = document.querySelector(sel);
+    if (nextEl){
+      nextEl.focus();
+      nextEl.select();
+    }
   }
 
-  // ---------- Totals / Bank pool ----------
-  function sumLotsByDenom(){
-    const totals = Object.fromEntries(DENOMS.map(d => [d, 0]));
-    DENOMS.forEach(d => {
-      totals[d] = state.counts[d].reduce((a,b) => a + (b || 0), 0);
+  // ---------- Totals / Unbundled ----------
+  function sumEnteredCountsByDenom(){
+    const totals = Object.fromEntries(ALL.map(v => [String(v), 0]));
+    ALL.forEach(v => {
+      totals[String(v)] = state.counts[String(v)].reduce((a,b) => a + (b || 0), 0);
     });
     return totals;
   }
 
   function sumBundlesByDenom(){
-    const totals = Object.fromEntries(DENOMS.map(d => [d, 0]));
+    const totals = Object.fromEntries(NOTES.map(d => [String(d), 0]));
     for (const b of state.bundles){
-      totals[b.denom] = (totals[b.denom] || 0) + b.count;
+      totals[String(b.denom)] = (totals[String(b.denom)] || 0) + b.count;
     }
     return totals;
   }
 
-  function unbundledByDenom(){
-    const lots = sumLotsByDenom();
-    const bund = sumBundlesByDenom();
-    const unb = Object.fromEntries(DENOMS.map(d => [d, (lots[d] || 0) - (bund[d] || 0)]));
-    return unb;
+  function leftUnbundledByDenom(){
+    const entered = sumEnteredCountsByDenom();
+    const bundled = sumBundlesByDenom();
+    const left = Object.fromEntries(ALL.map(v => [String(v), entered[String(v)] || 0]));
+
+    // subtract bundles from NOTES only
+    NOTES.forEach(d => {
+      left[String(d)] = (entered[String(d)] || 0) - (bundled[String(d)] || 0);
+    });
+
+    return left;
   }
 
   function sessionTotalValue(){
     let total = 0;
-    DENOMS.forEach(d => {
-      const count = state.counts[d].reduce((a,b)=>a+(b||0),0);
-      total += count * d;
+    ALL.forEach(v => {
+      const denom = Number(v);
+      const count = state.counts[String(v)].reduce((a,b)=>a+(b||0),0);
+      total += count * denom;
     });
     return total;
   }
 
   function lotTotalValue(lotIndex){
     let total = 0;
-    DENOMS.forEach(d => {
-      total += (state.counts[d][lotIndex] || 0) * d;
+    ALL.forEach(v => {
+      total += (state.counts[String(v)][lotIndex] || 0) * Number(v);
     });
     return total;
   }
 
-  function denomRowTotalValue(denom){
-    const count = state.counts[denom].reduce((a,b)=>a+(b||0),0);
+  function enteredValueForDenom(denomStr){
+    const denom = Number(denomStr);
+    const count = state.counts[denomStr].reduce((a,b)=>a+(b||0),0);
     return count * denom;
   }
 
   // ---------- Bundles ----------
   function eligibleDenoms(){
-    const unb = unbundledByDenom();
-    return DENOMS.filter(d => (unb[d] || 0) >= BUNDLE_SIZE).sort((a,b)=>b-a);
+    const left = leftUnbundledByDenom();
+    return NOTES.filter(d => (left[String(d)] || 0) >= BUNDLE_SIZE).sort((a,b)=>b-a);
   }
 
   function extractBundle(denom){
-    const unb = unbundledByDenom();
-    if ((unb[denom] || 0) < BUNDLE_SIZE) return;
+    const left = leftUnbundledByDenom();
+    if ((left[String(denom)] || 0) < BUNDLE_SIZE) return;
 
     state.bundles.unshift({
       ts: new Date().toISOString(),
@@ -543,7 +577,7 @@
       value: denom * BUNDLE_SIZE
     });
     save();
-    render();
+    render(); // this updates “Left (unbundled)” in the grid immediately
   }
 
   function undoLastBundle(){
@@ -555,13 +589,23 @@
 
   // ---------- Render ----------
   function render(){
-    // Row totals
-    DENOMS.forEach(d => {
-      const td = document.querySelector(`[data-row-total="${d}"]`);
-      if (td) td.textContent = money(denomRowTotalValue(d));
+    const entered = sumEnteredCountsByDenom();
+    const left = leftUnbundledByDenom();
+
+    // Update right-side summary columns per denom
+    ALL.forEach(v => {
+      const key = String(v);
+
+      const tdEntered = document.querySelector(`[data-entered-count="${cssEscape(key)}"]`);
+      const tdLeft = document.querySelector(`[data-left-count="${cssEscape(key)}"]`);
+      const tdVal = document.querySelector(`[data-entered-value="${cssEscape(key)}"]`);
+
+      if (tdEntered) tdEntered.textContent = String(entered[key] || 0);
+      if (tdLeft) tdLeft.textContent = String(left[key] || 0);
+      if (tdVal) tdVal.textContent = money(enteredValueForDenom(key));
     });
 
-    // Column totals
+    // Footer lot totals
     for (let c = 0; c < 10; c++){
       const td = document.querySelector(`[data-col-total="${c}"]`);
       if (td) td.textContent = money(lotTotalValue(c));
@@ -575,12 +619,12 @@
     el.sessionTotal.textContent = money(sessionTotalValue());
     el.bundleCount.textContent = String(state.bundles.length);
 
-    const unb = unbundledByDenom();
-    const unbundledNotes = DENOMS.reduce((a,d)=>a + (unb[d] || 0), 0);
+    // Unbundled NOTES count only (what matters for the machine)
+    const unbundledNotes = NOTES.reduce((a,d)=>a + (left[String(d)] || 0), 0);
     el.unbundledNotes.textContent = String(unbundledNotes);
 
-    // Negative warning (if editing after bundles)
-    const hasNeg = DENOMS.some(d => (unb[d] || 0) < 0);
+    // Negative warning (notes only)
+    const hasNeg = NOTES.some(d => (left[String(d)] || 0) < 0);
     el.negWarn.style.display = hasNeg ? "block" : "none";
 
     // Alerts
@@ -591,18 +635,18 @@
       div.className = "alert";
       div.innerHTML = `
         <div class="alertTitle">No bundles ready</div>
-        <div class="small muted">Keep entering counts. When any denomination reaches 85 unbundled notes, it will appear here.</div>
+        <div class="small muted">Keep entering counts. When any note denomination reaches 85 unbundled notes, it will appear here.</div>
       `;
       el.alerts.appendChild(div);
     } else {
       elig.forEach(d => {
-        const available = unb[d] || 0;
+        const available = left[String(d)] || 0;
         const div = document.createElement("div");
         div.className = "alert good";
         div.innerHTML = `
           <div class="alertTitle">READY: ${BUNDLE_SIZE} × $${d}</div>
           <div class="row small mono">
-            <div><span class="muted">Unbundled:</span> <strong>${available}</strong> notes</div>
+            <div><span class="muted">Left (unbundled):</span> <strong>${available}</strong></div>
             <button class="btn btnGood" type="button">Extract</button>
           </div>
         `;
@@ -619,7 +663,7 @@
       div.textContent = "No bundles created yet.";
       el.bundleLog.appendChild(div);
     } else {
-      state.bundles.slice(0, 50).forEach((b, idx) => {
+      state.bundles.slice(0, 60).forEach((b, idx) => {
         const div = document.createElement("div");
         div.className = "bundleItem";
         div.innerHTML = `
@@ -631,10 +675,10 @@
         `;
         el.bundleLog.appendChild(div);
       });
-      if (state.bundles.length > 50){
+      if (state.bundles.length > 60){
         const div = document.createElement("div");
         div.className = "bundleItem small muted";
-        div.textContent = "Showing latest 50 bundles.";
+        div.textContent = "Showing latest 60 bundles.";
         el.bundleLog.appendChild(div);
       }
     }
@@ -661,12 +705,12 @@
     save();
     buildGrid();
     render();
+    focusFirst();
   });
 
   el.clearLocksBtn.addEventListener("click", () => {
-    DENOMS.forEach(d => state.locked[d] = Array(10).fill(false));
+    ALL.forEach(v => state.locked[String(v)] = Array(10).fill(false));
     save();
-    // visually remove locked class where needed
     document.querySelectorAll(".cellInput").forEach(inp => inp.classList.remove("locked"));
   });
 
@@ -679,25 +723,25 @@
       const st = defaultState();
 
       if (parsed?.counts){
-        DENOMS.forEach(d => {
-          const arr = parsed.counts[d];
+        ALL.forEach(v => {
+          const key = String(v);
+          const arr = parsed.counts[key];
           if (Array.isArray(arr)){
-            st.counts[d] = arr.slice(0,10).map(x => Number.isFinite(x) && x >= 0 ? Math.floor(x) : 0);
-            while (st.counts[d].length < 10) st.counts[d].push(0);
+            st.counts[key] = arr.slice(0,10).map(x => Number.isFinite(x) && x >= 0 ? Math.floor(x) : 0);
+            while (st.counts[key].length < 10) st.counts[key].push(0);
           }
         });
       }
-
       if (parsed?.locked){
-        DENOMS.forEach(d => {
-          const arr = parsed.locked[d];
+        ALL.forEach(v => {
+          const key = String(v);
+          const arr = parsed.locked[key];
           if (Array.isArray(arr)){
-            st.locked[d] = arr.slice(0,10).map(x => !!x);
-            while (st.locked[d].length < 10) st.locked[d].push(false);
+            st.locked[key] = arr.slice(0,10).map(x => !!x);
+            while (st.locked[key].length < 10) st.locked[key].push(false);
           }
         });
       }
-
       if (Array.isArray(parsed?.bundles)){
         st.bundles = parsed.bundles
           .filter(b => b && Number.isFinite(b.denom) && Number.isFinite(b.count))
@@ -708,7 +752,6 @@
             value: b.value ?? (b.denom * b.count)
           }));
       }
-
       return st;
     } catch {
       return defaultState();
@@ -720,9 +763,26 @@
   }
 
   // ---------- Helpers ----------
-  function money(n){
-    return "$" + (n || 0).toLocaleString(undefined, {maximumFractionDigits:0});
+  function denomLabel(v){
+    // notes: "$100"; coins: "$2", "$1", "50c", "20c", "10c"
+    if (v >= 5) return `$${v}`;
+    if (v === 2) return "$2";
+    if (v === 1) return "$1";
+    if (v === 0.5) return "50c";
+    if (v === 0.2) return "20c";
+    if (v === 0.1) return "10c";
+    return String(v);
   }
+
+  function money(n){
+    // Show cents only if needed (coins make that possible)
+    const hasCents = Math.abs(n - Math.round(n)) > 1e-9;
+    return "$" + (n || 0).toLocaleString(undefined, {
+      minimumFractionDigits: hasCents ? 2 : 0,
+      maximumFractionDigits: hasCents ? 2 : 0
+    });
+  }
+
   function fmt(iso){
     try{
       const d = new Date(iso);
@@ -730,13 +790,21 @@
     } catch { return iso; }
   }
 
+  // for attribute selectors with decimals
+  function cssEscape(s){
+    // minimal escape for our use-case (decimals)
+    return String(s).replace(/"/g, '\\"');
+  }
+
+  function focusFirst(){
+    const first = document.querySelector('.cellInput');
+    if (first) { first.focus(); first.select(); }
+  }
+
   // ---------- Start ----------
   buildGrid();
   render();
-
-  // Optional: focus first cell on load for fast entry
-  const first = document.querySelector('.cellInput');
-  if (first) { first.focus(); first.select(); }
+  focusFirst();
 })();
 </script>
 </body>

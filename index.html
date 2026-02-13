@@ -1,0 +1,743 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Banking Cash Counter (Grid + 85-note bundles)</title>
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --panel:#111a24;
+      --panel2:#0f1620;
+      --text:#eaf2ff;
+      --muted:#a6b3c5;
+      --line:#223244;
+      --good:#1f8f4a;
+      --warn:#b88b00;
+      --bad:#b02a2a;
+      --shadow: 0 10px 24px rgba(0,0,0,.35);
+      --radius: 14px;
+      --cell:#0b131c;
+      --focus:#3aa0ff;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background: linear-gradient(180deg, #070a0f 0%, var(--bg) 100%);
+      color:var(--text);
+    }
+
+    header{
+      position: sticky; top:0;
+      background: rgba(11,15,20,.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--line);
+      padding: 12px 16px;
+      z-index: 5;
+    }
+
+    .hdrRow{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .pill{
+      background: rgba(26,38,52,.9);
+      border:1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    .pill strong{ font-weight: 800; }
+    .pill .muted{ color: var(--muted); }
+
+    .btn{
+      cursor:pointer;
+      border:1px solid var(--line);
+      background: linear-gradient(180deg, #1b2a3e 0%, #142033 100%);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-weight: 750;
+      font-size: 14px;
+    }
+    .btn:active{ transform: translateY(1px); }
+    .btnGood{
+      background: linear-gradient(180deg, #1d7a41 0%, #155a31 100%);
+      border-color: rgba(31,143,74,.6);
+    }
+    .btnGhost{
+      background: transparent;
+    }
+
+    .wrap{
+      padding: 16px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .layout{
+      display:grid;
+      grid-template-columns: 1.4fr .6fr;
+      gap: 14px;
+      align-items:start;
+    }
+
+    .card{
+      background: linear-gradient(180deg, var(--panel) 0%, var(--panel2) 100%);
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    h2{
+      margin: 0 0 10px 0;
+      font-size: 16px;
+      letter-spacing: .2px;
+    }
+    .sub{
+      margin-top:-6px;
+      margin-bottom:12px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    /* GRID TABLE */
+    .tableWrap{
+      overflow:auto;
+      border:1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(8,12,18,.35);
+    }
+
+    table{
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 950px;
+    }
+
+    thead th{
+      position: sticky;
+      top: 0;
+      background: rgba(17,26,36,.98);
+      z-index: 2;
+      text-align: center;
+      font-weight: 800;
+      border-bottom: 1px solid var(--line);
+      padding: 10px 8px;
+      white-space: nowrap;
+    }
+
+    thead th:first-child{
+      text-align:left;
+      padding-left: 12px;
+      z-index: 3;
+    }
+
+    tbody td, tfoot td{
+      border-bottom: 1px solid rgba(34,50,68,.65);
+      border-right: 1px solid rgba(34,50,68,.45);
+      padding: 8px;
+      text-align: center;
+      vertical-align: middle;
+    }
+    tbody tr:last-child td{ border-bottom: none; }
+
+    tbody td:first-child, tfoot td:first-child{
+      text-align:left;
+      padding-left: 12px;
+      font-weight: 850;
+      border-right: 1px solid rgba(34,50,68,.75);
+      background: rgba(12,18,26,.65);
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      white-space: nowrap;
+    }
+
+    tfoot td{
+      background: rgba(12,18,26,.55);
+      font-weight: 850;
+      border-top: 1px solid var(--line);
+    }
+    tfoot td:first-child{
+      z-index: 1;
+    }
+
+    .cellInput{
+      width: 100%;
+      max-width: 120px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(34,50,68,.75);
+      background: var(--cell);
+      color: var(--text);
+      outline: none;
+      font-size: 15px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .cellInput:focus{
+      border-color: var(--focus);
+      box-shadow: 0 0 0 3px rgba(58,160,255,.20);
+    }
+    .locked{
+      border-color: rgba(31,143,74,.65) !important;
+      background: rgba(31,143,74,.08) !important;
+    }
+
+    .mono{ font-variant-numeric: tabular-nums; }
+    .muted{ color: var(--muted); }
+    .hr{ height:1px; background: var(--line); margin: 12px 0; }
+
+    /* Bundles panel */
+    .alert{
+      border:1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+      background: rgba(184,139,0,.10);
+    }
+    .alert.good{
+      background: rgba(31,143,74,.10);
+      border-color: rgba(31,143,74,.6);
+    }
+    .alertTitle{
+      font-weight: 900;
+      margin-bottom: 6px;
+    }
+    .row{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content: space-between;
+      flex-wrap:wrap;
+    }
+
+    .small{ font-size: 13px; }
+    .bundleItem{
+      border:1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: rgba(8,12,18,.35);
+      margin-top: 8px;
+    }
+
+    .note{
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 1100px){
+      .layout{ grid-template-columns: 1fr; }
+      table{ min-width: 900px; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="hdrRow">
+    <div class="pill"><span class="muted">Session total</span> <strong id="sessionTotal">$0</strong></div>
+    <div class="pill"><span class="muted">Bundles</span> <strong id="bundleCount">0</strong></div>
+    <div class="pill"><span class="muted">Unbundled notes</span> <strong id="unbundledNotes">0</strong></div>
+
+    <button class="btn btnGhost" id="clearLocksBtn" type="button">Clear locks</button>
+    <button class="btn" id="exportBtn" type="button">Export</button>
+    <button class="btn" id="resetBtn" type="button">Reset</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout">
+    <!-- GRID -->
+    <div class="card">
+      <h2>Lots grid</h2>
+      <div class="sub">
+        Type counts into the grid. Any non-empty number “locks in” automatically (green outline).
+        <strong>Enter</strong> / <strong>Tab</strong> moves forward; <strong>Shift+Enter</strong> / <strong>Shift+Tab</strong> moves backward.
+      </div>
+
+      <div class="tableWrap">
+        <table id="gridTable" aria-label="Lots grid"></table>
+      </div>
+
+      <div class="note">
+        Notes are treated as <strong>mixed</strong> across lots for bundling. The app computes the mixed “unbundled bank pile” as:
+        (sum of all lot counts) minus (bundles already extracted).
+      </div>
+    </div>
+
+    <!-- BUNDLES -->
+    <div class="card">
+      <h2>85-note bundles</h2>
+      <div class="sub">Bundles are always a single denomination (85 notes). Extract when ready and rubber-band the pile.</div>
+
+      <div id="alerts"></div>
+
+      <div class="hr"></div>
+
+      <div class="row">
+        <h2 style="margin:0;">Bundles log</h2>
+        <button class="btn btnGhost" id="undoBtn" type="button">Undo last</button>
+      </div>
+      <div id="bundleLog"></div>
+
+      <div class="note" id="negWarn" style="display:none;">
+        <strong style="color:#ffb4b4;">Warning:</strong> One or more denominations went negative after bundles (usually caused by editing lot counts down after extracting).
+        Fix by adjusting the grid back up, or undo bundles.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const DENOMS = [100, 50, 20, 10, 5];
+  const LOTS = Array.from({length: 10}, (_, i) => `Lot ${i+1}`);
+  const BUNDLE_SIZE = 85;
+  const LS_KEY = "banking85_grid_v1";
+
+  const el = {
+    gridTable: document.getElementById("gridTable"),
+    sessionTotal: document.getElementById("sessionTotal"),
+    bundleCount: document.getElementById("bundleCount"),
+    unbundledNotes: document.getElementById("unbundledNotes"),
+    alerts: document.getElementById("alerts"),
+    bundleLog: document.getElementById("bundleLog"),
+    undoBtn: document.getElementById("undoBtn"),
+    exportBtn: document.getElementById("exportBtn"),
+    resetBtn: document.getElementById("resetBtn"),
+    clearLocksBtn: document.getElementById("clearLocksBtn"),
+    negWarn: document.getElementById("negWarn"),
+  };
+
+  const defaultState = () => ({
+    version: 1,
+    createdAt: new Date().toISOString(),
+    // counts[denom][lotIndex] = number
+    counts: Object.fromEntries(DENOMS.map(d => [d, Array(10).fill(0)])),
+    // locked[denom][lotIndex] = boolean (purely UI)
+    locked: Object.fromEntries(DENOMS.map(d => [d, Array(10).fill(false)])),
+    // bundles: {ts, denom, count:85, value}
+    bundles: []
+  });
+
+  let state = load();
+
+  // ---------- Build grid ----------
+  function buildGrid(){
+    const table = el.gridTable;
+    table.innerHTML = "";
+
+    const thead = document.createElement("thead");
+    const hr = document.createElement("tr");
+
+    const th0 = document.createElement("th");
+    th0.textContent = "Denomination";
+    hr.appendChild(th0);
+
+    LOTS.forEach((name) => {
+      const th = document.createElement("th");
+      th.textContent = name;
+      hr.appendChild(th);
+    });
+
+    const thTotal = document.createElement("th");
+    thTotal.textContent = "Row total";
+    hr.appendChild(thTotal);
+
+    thead.appendChild(hr);
+    table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+
+    DENOMS.forEach((denom) => {
+      const tr = document.createElement("tr");
+
+      const tdLabel = document.createElement("td");
+      tdLabel.textContent = `$${denom}`;
+      tr.appendChild(tdLabel);
+
+      for (let c = 0; c < 10; c++){
+        const td = document.createElement("td");
+        const inp = document.createElement("input");
+        inp.type = "number";
+        inp.min = "0";
+        inp.step = "1";
+        inp.className = "cellInput mono";
+        inp.inputMode = "numeric";
+        inp.dataset.denom = String(denom);
+        inp.dataset.lot = String(c);
+
+        inp.value = state.counts[denom][c] ? String(state.counts[denom][c]) : "";
+
+        if (state.locked[denom][c] && inp.value !== "") inp.classList.add("locked");
+
+        // Commit on blur (auto-lock if not empty)
+        inp.addEventListener("blur", () => commitCell(inp));
+
+        // Commit on Enter, then move like Tab
+        inp.addEventListener("keydown", (e) => {
+          if (e.key === "Enter"){
+            e.preventDefault();
+            commitCell(inp);
+            moveFocus(inp, e.shiftKey ? -1 : +1);
+          }
+        });
+
+        // If user clears field, unlock immediately (but commit on blur/enter will zero it)
+        inp.addEventListener("input", () => {
+          if (inp.value === ""){
+            inp.classList.remove("locked");
+          }
+        });
+
+        td.appendChild(inp);
+        tr.appendChild(td);
+      }
+
+      const tdRowTotal = document.createElement("td");
+      tdRowTotal.className = "mono";
+      tdRowTotal.dataset.rowTotal = String(denom);
+      tdRowTotal.style.fontWeight = "850";
+      tr.appendChild(tdRowTotal);
+
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+
+    // Footer: column totals + session total
+    const tfoot = document.createElement("tfoot");
+    const fr = document.createElement("tr");
+
+    const f0 = document.createElement("td");
+    f0.textContent = "Lot total ($)";
+    fr.appendChild(f0);
+
+    for (let c = 0; c < 10; c++){
+      const td = document.createElement("td");
+      td.className = "mono";
+      td.dataset.colTotal = String(c);
+      fr.appendChild(td);
+    }
+
+    const grand = document.createElement("td");
+    grand.className = "mono";
+    grand.dataset.grandTotal = "1";
+    fr.appendChild(grand);
+
+    tfoot.appendChild(fr);
+    table.appendChild(tfoot);
+  }
+
+  function commitCell(inp){
+    const denom = Number(inp.dataset.denom);
+    const lot = Number(inp.dataset.lot);
+
+    const raw = inp.value;
+    const n = raw === "" ? 0 : Math.max(0, Math.floor(Number(raw)));
+
+    // normalize display (blank for zero to speed scanning)
+    if (n === 0){
+      inp.value = "";
+      state.locked[denom][lot] = false;
+      inp.classList.remove("locked");
+    } else {
+      inp.value = String(n);
+      state.locked[denom][lot] = true;
+      inp.classList.add("locked");
+    }
+
+    state.counts[denom][lot] = n;
+    save();
+    render();
+  }
+
+  function moveFocus(currentInput, dir){
+    const inputs = Array.from(document.querySelectorAll(".cellInput"));
+    const idx = inputs.indexOf(currentInput);
+    if (idx < 0) return;
+
+    let next = idx + dir;
+    if (next < 0) next = 0;
+    if (next >= inputs.length) next = inputs.length - 1;
+
+    inputs[next].focus();
+    inputs[next].select();
+  }
+
+  // ---------- Totals / Bank pool ----------
+  function sumLotsByDenom(){
+    const totals = Object.fromEntries(DENOMS.map(d => [d, 0]));
+    DENOMS.forEach(d => {
+      totals[d] = state.counts[d].reduce((a,b) => a + (b || 0), 0);
+    });
+    return totals;
+  }
+
+  function sumBundlesByDenom(){
+    const totals = Object.fromEntries(DENOMS.map(d => [d, 0]));
+    for (const b of state.bundles){
+      totals[b.denom] = (totals[b.denom] || 0) + b.count;
+    }
+    return totals;
+  }
+
+  function unbundledByDenom(){
+    const lots = sumLotsByDenom();
+    const bund = sumBundlesByDenom();
+    const unb = Object.fromEntries(DENOMS.map(d => [d, (lots[d] || 0) - (bund[d] || 0)]));
+    return unb;
+  }
+
+  function sessionTotalValue(){
+    let total = 0;
+    DENOMS.forEach(d => {
+      const count = state.counts[d].reduce((a,b)=>a+(b||0),0);
+      total += count * d;
+    });
+    return total;
+  }
+
+  function lotTotalValue(lotIndex){
+    let total = 0;
+    DENOMS.forEach(d => {
+      total += (state.counts[d][lotIndex] || 0) * d;
+    });
+    return total;
+  }
+
+  function denomRowTotalValue(denom){
+    const count = state.counts[denom].reduce((a,b)=>a+(b||0),0);
+    return count * denom;
+  }
+
+  // ---------- Bundles ----------
+  function eligibleDenoms(){
+    const unb = unbundledByDenom();
+    return DENOMS.filter(d => (unb[d] || 0) >= BUNDLE_SIZE).sort((a,b)=>b-a);
+  }
+
+  function extractBundle(denom){
+    const unb = unbundledByDenom();
+    if ((unb[denom] || 0) < BUNDLE_SIZE) return;
+
+    state.bundles.unshift({
+      ts: new Date().toISOString(),
+      denom,
+      count: BUNDLE_SIZE,
+      value: denom * BUNDLE_SIZE
+    });
+    save();
+    render();
+  }
+
+  function undoLastBundle(){
+    if (state.bundles.length === 0) return;
+    state.bundles.shift();
+    save();
+    render();
+  }
+
+  // ---------- Render ----------
+  function render(){
+    // Row totals
+    DENOMS.forEach(d => {
+      const td = document.querySelector(`[data-row-total="${d}"]`);
+      if (td) td.textContent = money(denomRowTotalValue(d));
+    });
+
+    // Column totals
+    for (let c = 0; c < 10; c++){
+      const td = document.querySelector(`[data-col-total="${c}"]`);
+      if (td) td.textContent = money(lotTotalValue(c));
+    }
+
+    // Grand total
+    const gt = document.querySelector(`[data-grand-total="1"]`);
+    if (gt) gt.textContent = money(sessionTotalValue());
+
+    // Header pills
+    el.sessionTotal.textContent = money(sessionTotalValue());
+    el.bundleCount.textContent = String(state.bundles.length);
+
+    const unb = unbundledByDenom();
+    const unbundledNotes = DENOMS.reduce((a,d)=>a + (unb[d] || 0), 0);
+    el.unbundledNotes.textContent = String(unbundledNotes);
+
+    // Negative warning (if editing after bundles)
+    const hasNeg = DENOMS.some(d => (unb[d] || 0) < 0);
+    el.negWarn.style.display = hasNeg ? "block" : "none";
+
+    // Alerts
+    el.alerts.innerHTML = "";
+    const elig = eligibleDenoms();
+    if (elig.length === 0){
+      const div = document.createElement("div");
+      div.className = "alert";
+      div.innerHTML = `
+        <div class="alertTitle">No bundles ready</div>
+        <div class="small muted">Keep entering counts. When any denomination reaches 85 unbundled notes, it will appear here.</div>
+      `;
+      el.alerts.appendChild(div);
+    } else {
+      elig.forEach(d => {
+        const available = unb[d] || 0;
+        const div = document.createElement("div");
+        div.className = "alert good";
+        div.innerHTML = `
+          <div class="alertTitle">READY: ${BUNDLE_SIZE} × $${d}</div>
+          <div class="row small mono">
+            <div><span class="muted">Unbundled:</span> <strong>${available}</strong> notes</div>
+            <button class="btn btnGood" type="button">Extract</button>
+          </div>
+        `;
+        div.querySelector("button").addEventListener("click", () => extractBundle(d));
+        el.alerts.appendChild(div);
+      });
+    }
+
+    // Bundle log
+    el.bundleLog.innerHTML = "";
+    if (state.bundles.length === 0){
+      const div = document.createElement("div");
+      div.className = "bundleItem small muted";
+      div.textContent = "No bundles created yet.";
+      el.bundleLog.appendChild(div);
+    } else {
+      state.bundles.slice(0, 50).forEach((b, idx) => {
+        const div = document.createElement("div");
+        div.className = "bundleItem";
+        div.innerHTML = `
+          <div class="row">
+            <div><strong>Bundle ${state.bundles.length - idx}</strong></div>
+            <div class="mono"><strong>${b.count}</strong> × $${b.denom} = <strong>${money(b.value)}</strong></div>
+          </div>
+          <div class="small muted" style="margin-top:6px;">${fmt(b.ts)}</div>
+        `;
+        el.bundleLog.appendChild(div);
+      });
+      if (state.bundles.length > 50){
+        const div = document.createElement("div");
+        div.className = "bundleItem small muted";
+        div.textContent = "Showing latest 50 bundles.";
+        el.bundleLog.appendChild(div);
+      }
+    }
+  }
+
+  // ---------- Buttons ----------
+  el.undoBtn.addEventListener("click", undoLastBundle);
+
+  el.exportBtn.addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "banking-grid-session.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+
+  el.resetBtn.addEventListener("click", () => {
+    if (!confirm("Reset everything (grid + bundles + locks)?")) return;
+    state = defaultState();
+    save();
+    buildGrid();
+    render();
+  });
+
+  el.clearLocksBtn.addEventListener("click", () => {
+    DENOMS.forEach(d => state.locked[d] = Array(10).fill(false));
+    save();
+    // visually remove locked class where needed
+    document.querySelectorAll(".cellInput").forEach(inp => inp.classList.remove("locked"));
+  });
+
+  // ---------- Storage ----------
+  function load(){
+    try{
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return defaultState();
+      const parsed = JSON.parse(raw);
+      const st = defaultState();
+
+      if (parsed?.counts){
+        DENOMS.forEach(d => {
+          const arr = parsed.counts[d];
+          if (Array.isArray(arr)){
+            st.counts[d] = arr.slice(0,10).map(x => Number.isFinite(x) && x >= 0 ? Math.floor(x) : 0);
+            while (st.counts[d].length < 10) st.counts[d].push(0);
+          }
+        });
+      }
+
+      if (parsed?.locked){
+        DENOMS.forEach(d => {
+          const arr = parsed.locked[d];
+          if (Array.isArray(arr)){
+            st.locked[d] = arr.slice(0,10).map(x => !!x);
+            while (st.locked[d].length < 10) st.locked[d].push(false);
+          }
+        });
+      }
+
+      if (Array.isArray(parsed?.bundles)){
+        st.bundles = parsed.bundles
+          .filter(b => b && Number.isFinite(b.denom) && Number.isFinite(b.count))
+          .map(b => ({
+            ts: typeof b.ts === "string" ? b.ts : new Date().toISOString(),
+            denom: b.denom,
+            count: b.count,
+            value: b.value ?? (b.denom * b.count)
+          }));
+      }
+
+      return st;
+    } catch {
+      return defaultState();
+    }
+  }
+
+  function save(){
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
+  }
+
+  // ---------- Helpers ----------
+  function money(n){
+    return "$" + (n || 0).toLocaleString(undefined, {maximumFractionDigits:0});
+  }
+  function fmt(iso){
+    try{
+      const d = new Date(iso);
+      return d.toLocaleString(undefined, {year:"numeric", month:"short", day:"2-digit", hour:"2-digit", minute:"2-digit"});
+    } catch { return iso; }
+  }
+
+  // ---------- Start ----------
+  buildGrid();
+  render();
+
+  // Optional: focus first cell on load for fast entry
+  const first = document.querySelector('.cellInput');
+  if (first) { first.focus(); first.select(); }
+})();
+</script>
+</body>
+</html>

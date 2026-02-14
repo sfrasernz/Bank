@@ -877,7 +877,17 @@
       const tdVal = document.querySelector(`[data-entered-value="${cssEscape(key)}"]`);
 
       if (tdEntered) tdEntered.textContent = String(entered[key] || 0);
-      if (tdLeft) tdLeft.textContent = String(left[key] || 0);
+      if (tdLeft){
+  const currentLeft = left[key] || 0;
+
+  // Notes: show remainder after removing as many 85s as possible
+  // Coins: show actual count (no bundling)
+  const displayLeft = NOTES.includes(Number(v))
+    ? leftAfterBundlingCount(currentLeft)
+    : currentLeft;
+
+  tdLeft.textContent = String(displayLeft);
+}
       if (tdVal) tdVal.textContent = money(enteredValueForDenom(key));
 
       if (tdLeft){
@@ -897,7 +907,7 @@
         if (NOTES.includes(Number(v))){
           const val = left[key] || 0;
           if (val < 0){ badge.textContent = "NEG"; badge.classList.add("bad"); }
-          else if (val >= BUNDLE_SIZE){ badge.textContent = "READY"; badge.classList.add("ready"); }
+          else if (val >= BUNDLE_SIZE){ badge.textContent = `x${Math.floor(val / BUNDLE_SIZE)}`; }
           else if (val >= READY_NEAR){ badge.textContent = "NEAR"; badge.classList.add("near"); }
           else { badge.textContent = ""; }
         }
@@ -915,8 +925,11 @@
     el.sessionTotal.textContent = money(sessionTotalValue());
     el.bundleCount.textContent = String(state.bundles.length);
 
-    const unbundledNotes = NOTES.reduce((a,d)=>a + (left[String(d)] || 0), 0);
-    el.unbundledNotes.textContent = String(unbundledNotes);
+const unbundledNotes = NOTES.reduce((a,d)=>{
+  const currentLeft = left[String(d)] || 0;
+  return a + leftAfterBundlingCount(currentLeft);
+}, 0);
+el.unbundledNotes.textContent = String(unbundledNotes);
 
     el.finalBundleBtn.disabled = state.finalBundleCreated || state.sessionLocked;
     el.extractMaxBtn.disabled = state.finalBundleCreated || state.sessionLocked;
@@ -1234,6 +1247,14 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+function leftAfterBundlingCount(currentLeft){
+  if (!Number.isFinite(currentLeft)) return 0;
+  if (currentLeft < 0) return currentLeft;     // keep negatives visible
+  return currentLeft % BUNDLE_SIZE;            // remainder after taking out full 85s
+}
+
+
+  
   function csvCell(s){
     const str = String(s ?? "");
     if (/[",\n]/.test(str)) return `"${str.replace(/"/g,'""')}"`;

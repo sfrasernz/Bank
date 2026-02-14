@@ -26,7 +26,6 @@
       --cell-pad-x: 12px;
       --th-font: 15px;
       --td-pad: 10px;
-      --bundle-width: 640px;
     }
 
     *{ box-sizing:border-box; }
@@ -44,7 +43,7 @@
       backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--line);
       padding: 12px 16px;
-      z-index: 5;
+      z-index: 10;
     }
     .hdrRow{
       display:flex;
@@ -94,16 +93,16 @@
 
     .wrap{
       padding: 16px;
-      max-width: none;
       width: 100%;
       margin: 0;
     }
 
+    /* NEW: vertical stack layout */
     .layout{
-      display:grid;
-      grid-template-columns: 1fr var(--bundle-width);
+      display:flex;
+      flex-direction: column;
       gap: 14px;
-      align-items:start;
+      align-items: stretch;
     }
 
     .card{
@@ -114,6 +113,7 @@
       padding: 14px;
       min-width: 0;
     }
+
     h2{ margin: 0 0 10px 0; font-size: 18px; letter-spacing: .2px; }
     .sub{
       margin-top:-6px;
@@ -184,7 +184,7 @@
 
     .cellInput{
       width: 100%;
-      min-width: 110px;
+      min-width: 120px; /* a touch wider since we now have more space */
       padding: var(--cell-pad-y) var(--cell-pad-x);
       border-radius: 10px;
       border: 1px solid rgba(34,50,68,.75);
@@ -241,6 +241,7 @@
       border-color: rgba(31,143,74,.6);
     }
     .alertTitle{ font-weight: 900; margin-bottom: 6px; }
+
     .row{
       display:flex;
       gap:10px;
@@ -249,6 +250,7 @@
       flex-wrap:wrap;
     }
     .small{ font-size: 14px; }
+
     .bundleItem{
       border:1px solid var(--line);
       border-radius: 12px;
@@ -256,19 +258,22 @@
       background: rgba(8,12,18,.35);
       margin-top: 8px;
     }
+
     .note{
       font-size: 13px;
       color: var(--muted);
       line-height: 1.35;
       margin-top: 10px;
     }
+
     .miniGrid{
       display:grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: 1fr auto auto;
       gap: 6px 10px;
       margin-top: 8px;
       font-size: 13px;
     }
+
     .toolsRow{
       display:flex;
       gap:10px;
@@ -276,19 +281,27 @@
       margin-bottom: 10px;
     }
 
+    /* NEW: sticky bundle controls within the bottom pane */
+    .bundleSticky{
+      position: sticky;
+      top: 62px; /* below header */
+      z-index: 6;
+      background: rgba(17,26,36,.95);
+      border: 1px solid rgba(34,50,68,.65);
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 12px;
+      backdrop-filter: blur(8px);
+    }
+
     @media print{
       header, .noPrint{ display:none !important; }
       body{ background: #fff; color:#000; }
       .wrap{ padding:0; }
-      .layout{ grid-template-columns: 1fr; }
       .card{ box-shadow:none; background:#fff; border: 1px solid #ddd; }
       .tableWrap{ border: 1px solid #ddd; background:#fff; }
       table{ font-size: 11px; }
-    }
-
-    @media (max-width: 1300px){
-      :root{ --bundle-width: 1fr; }
-      .layout{ grid-template-columns: 1fr; }
+      .bundleSticky{ position: static; border: none; padding: 0; background: transparent; }
     }
   </style>
 </head>
@@ -310,7 +323,7 @@
 
 <div class="wrap">
   <div class="layout">
-    <!-- GRID -->
+    <!-- GRID (full width) -->
     <div class="card">
       <h2>Lots grid (notes + coins)</h2>
       <div class="sub noPrint">
@@ -325,25 +338,26 @@
 
       <div class="note noPrint">
         Bundling is <strong>notes only</strong> (85 of the same denomination). Coins are tracked for totals but never bundled.<br/>
-        The “Left (after bundling)” column shows the <strong>remainder</strong> after taking out as many full 85s as possible.
+        “Left (after bundling)” shows the <strong>remainder</strong> after taking out as many full 85s as possible.
       </div>
     </div>
 
-    <!-- BUNDLES -->
+    <!-- BUNDLES (bottom pane) -->
     <div class="card">
-      <h2>Bundles</h2>
+      <h2>Bundles & coin summary</h2>
       <div class="sub noPrint">
-        Extract 85-note bundles as you go. When done, use <strong>Final Bundles</strong> to split remaining notes into mixed bundles of up to <strong>85</strong> each.
+        Controls are sticky while you scroll the bundle log.
       </div>
 
-      <div class="toolsRow noPrint">
-        <button class="btn btnGood" id="extractMaxBtn" type="button">Extract max 85s</button>
-        <button class="btn btnWarn" id="finalBundleBtn" type="button">Final Bundles (Mixed)</button>
-        <button class="btn btnGhost" id="undoBtn" type="button">Undo last</button>
-        <button class="btn btnGhost" id="lockBtn" type="button">Lock session</button>
+      <div class="bundleSticky noPrint">
+        <div class="toolsRow">
+          <button class="btn btnGood" id="extractMaxBtn" type="button">Extract max 85s</button>
+          <button class="btn btnWarn" id="finalBundleBtn" type="button">Final Bundles (Mixed)</button>
+          <button class="btn btnGhost" id="undoBtn" type="button">Undo last</button>
+          <button class="btn btnGhost" id="lockBtn" type="button">Lock session</button>
+        </div>
+        <div id="alerts"></div>
       </div>
-
-      <div id="alerts"></div>
 
       <div class="hr"></div>
 
@@ -372,7 +386,7 @@
   const LOTS = Array.from({length: 10}, (_, i) => `Lot ${i+1}`);
   const BUNDLE_SIZE = 85;
   const READY_NEAR = 70;
-  const LS_KEY = "banking85_grid_v6";
+  const LS_KEY = "banking85_grid_v7";
 
   const el = {
     gridTable: document.getElementById("gridTable"),
@@ -396,7 +410,7 @@
   };
 
   const defaultState = () => ({
-    version: 6,
+    version: 7,
     createdAt: new Date().toISOString(),
     counts: Object.fromEntries(ALL.map(v => [String(v), Array(10).fill(0)])),
     lockedCells: Object.fromEntries(ALL.map(v => [String(v), Array(10).fill(false)])),
@@ -409,8 +423,8 @@
 
   function leftAfterBundlingCount(currentLeft){
     if (!Number.isFinite(currentLeft)) return 0;
-    if (currentLeft < 0) return currentLeft;        // keep negatives visible
-    return currentLeft % BUNDLE_SIZE;               // remainder after pulling full 85s
+    if (currentLeft < 0) return currentLeft;
+    return currentLeft % BUNDLE_SIZE;
   }
 
   // ---------- Grid ----------
@@ -680,11 +694,15 @@
     return count * denom;
   }
 
+  // UPDATED: include per-coin value rows
   function coinTotals(){
     const entered = sumEnteredCountsByDenom();
-    const counts = Object.fromEntries(COINS.map(c => [String(c), entered[String(c)] || 0]));
-    const value = COINS.reduce((a,c)=> a + (counts[String(c)]||0) * c, 0);
-    return { counts, value };
+    const rows = COINS.map(c => {
+      const count = entered[String(c)] || 0;
+      return { coin: c, count, value: count * c };
+    });
+    const total = rows.reduce((a,r)=>a+r.value,0);
+    return { rows, total };
   }
 
   // ---------- Bundles ----------
@@ -809,14 +827,12 @@
   function consolidateToLot1(){
     if (state.sessionLocked) return;
 
-    // Sum everything into lot 0, clear lots 1..9
     for (const v of ALL){
       const k = String(v);
       const sum = state.counts[k].reduce((a,b)=>a+(b||0),0);
       state.counts[k][0] = sum;
       for (let i=1;i<10;i++) state.counts[k][i] = 0;
 
-      // Locks: keep lot 1 locked if non-zero, clear others
       state.lockedCells[k][0] = (sum > 0);
       for (let i=1;i<10;i++) state.lockedCells[k][i] = false;
     }
@@ -851,13 +867,11 @@
         if (NOTES.includes(Number(v))){
           if (currentLeft < 0) tdLeft.classList.add("statusBad");
           else if (displayLeft >= READY_NEAR && displayLeft < BUNDLE_SIZE) tdLeft.classList.add("statusNear");
-          // NOTE: we intentionally do NOT make remainder >=85 (it never is). Ready is handled by badge.
         }
       }
 
       if (tdVal) tdVal.textContent = money(enteredValueForDenom(key));
 
-      // Badge shows bundle availability (based on CURRENT left)
       const badge = document.querySelector(`[data-badge="${cssEscape(key)}"]`);
       if (badge){
         badge.classList.remove("ready","near","bad");
@@ -895,7 +909,6 @@
     el.sessionTotal.textContent = money(sessionTotalValue());
     el.bundleCount.textContent = String(state.bundles.length);
 
-    // Header pill: total remainder notes after bundling
     const afterNotes = NOTES.reduce((a,d)=>{
       const currentLeft = left[String(d)] || 0;
       return a + leftAfterBundlingCount(currentLeft);
@@ -964,17 +977,21 @@
       }
     }
 
-    // Coin summary
+    // Coin summary (UPDATED: count + value per coin)
     const coins = coinTotals();
     el.coinSummary.innerHTML = `
       <div class="row">
         <div><strong>Total coins</strong></div>
-        <div class="mono"><strong>${money(coins.value)}</strong></div>
+        <div class="mono"><strong>${money(coins.total)}</strong></div>
       </div>
       <div class="miniGrid">
-        ${COINS.map(c => `
-          <div><span class="muted">${coinLabel(c)}:</span></div>
-          <div class="right mono"><strong>${coins.counts[String(c)] || 0}</strong></div>
+        <div class="muted"><strong>Coin</strong></div>
+        <div class="right muted"><strong>Count</strong></div>
+        <div class="right muted"><strong>$</strong></div>
+        ${coins.rows.map(r => `
+          <div><span class="muted">${coinLabel(r.coin)}:</span></div>
+          <div class="right mono"><strong>${r.count}</strong></div>
+          <div class="right mono"><strong>${money(r.value)}</strong></div>
         `).join("")}
       </div>
     `;
@@ -987,7 +1004,7 @@
       div.textContent = "No bundles created yet.";
       el.bundleLog.appendChild(div);
     } else {
-      state.bundles.slice(0, 160).forEach((b, idx) => {
+      state.bundles.slice(0, 200).forEach((b, idx) => {
         const div = document.createElement("div");
         div.className = "bundleItem";
 
@@ -1014,7 +1031,7 @@
               <div><strong>${label}</strong> <span class="muted">(mixed)</span></div>
               <div class="mono"><strong>${b.count}</strong> notes = <strong>${money(b.value)}</strong></div>
             </div>
-            <div class="miniGrid">
+            <div class="miniGrid" style="grid-template-columns: 1fr auto;">
               ${lines || `<div class="muted">No notes?</div><div></div>`}
             </div>
             <div class="small muted" style="margin-top:8px;">${fmt(b.ts)}</div>

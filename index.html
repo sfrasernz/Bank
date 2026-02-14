@@ -19,14 +19,26 @@
       --radius: 14px;
       --cell:#0b131c;
       --focus:#3aa0ff;
+
+      /* Scaling knobs (tweak if you like) */
+      --base-font: 16px;
+      --cell-font: 18px;
+      --cell-pad-y: 10px;
+      --cell-pad-x: 12px;
+      --th-font: 15px;
+      --td-pad: 10px;
+      --bundle-width: 520px; /* right panel width on large screens */
     }
+
     *{ box-sizing:border-box; }
     body{
       margin:0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       background: linear-gradient(180deg, #070a0f 0%, var(--bg) 100%);
       color:var(--text);
+      font-size: var(--base-font);
     }
+
     header{
       position: sticky; top:0;
       background: rgba(11,15,20,.92);
@@ -45,11 +57,11 @@
       background: rgba(26,38,52,.9);
       border:1px solid var(--line);
       border-radius: 999px;
-      padding: 8px 12px;
+      padding: 10px 14px;
       display:flex;
       gap:10px;
       align-items:center;
-      font-size: 14px;
+      font-size: 15px;
       white-space: nowrap;
     }
     .pill strong{ font-weight: 800; }
@@ -61,7 +73,7 @@
       background: linear-gradient(180deg, #1b2a3e 0%, #142033 100%);
       color: var(--text);
       border-radius: 10px;
-      padding: 10px 12px;
+      padding: 10px 14px;
       font-weight: 750;
       font-size: 14px;
     }
@@ -72,34 +84,43 @@
     }
     .btnGhost{ background: transparent; }
 
+    /* Use the whole screen width */
     .wrap{
       padding: 16px;
-      max-width: 1500px;
-      margin: 0 auto;
+      max-width: none;   /* <-- key change */
+      width: 100%;
+      margin: 0;
     }
+
+    /* Two-panel layout that actually uses the space:
+       Left grows, right stays a comfortable fixed width on big screens */
     .layout{
       display:grid;
-      grid-template-columns: 1.45fr .55fr;
+      grid-template-columns: 1fr var(--bundle-width);
       gap: 14px;
       align-items:start;
     }
+
     .card{
       background: linear-gradient(180deg, var(--panel) 0%, var(--panel2) 100%);
       border:1px solid var(--line);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       padding: 14px;
+      min-width: 0; /* prevents grid overflow squeezing weirdly */
     }
-    h2{ margin: 0 0 10px 0; font-size: 16px; letter-spacing: .2px; }
+    h2{ margin: 0 0 10px 0; font-size: 18px; letter-spacing: .2px; }
     .sub{
       margin-top:-6px;
       margin-bottom:12px;
-      font-size: 13px;
+      font-size: 14px;
       color: var(--muted);
       line-height: 1.35;
     }
 
+    /* Table */
     .tableWrap{
+      width: 100%;
       overflow:auto;
       border:1px solid var(--line);
       border-radius: 12px;
@@ -109,8 +130,10 @@
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
-      min-width: 1150px;
+      /* Remove aggressive min-width so it can expand with the screen */
+      min-width: 0;
     }
+
     thead th{
       position: sticky;
       top: 0;
@@ -119,19 +142,20 @@
       text-align: center;
       font-weight: 800;
       border-bottom: 1px solid var(--line);
-      padding: 10px 8px;
+      padding: 12px 10px;
       white-space: nowrap;
+      font-size: var(--th-font);
     }
     thead th:first-child{
       text-align:left;
-      padding-left: 12px;
+      padding-left: 14px;
       z-index: 3;
     }
 
     tbody td, tfoot td{
       border-bottom: 1px solid rgba(34,50,68,.65);
       border-right: 1px solid rgba(34,50,68,.45);
-      padding: 8px;
+      padding: var(--td-pad);
       text-align: center;
       vertical-align: middle;
     }
@@ -139,7 +163,7 @@
 
     tbody td:first-child, tfoot td:first-child{
       text-align:left;
-      padding-left: 12px;
+      padding-left: 14px;
       font-weight: 850;
       border-right: 1px solid rgba(34,50,68,.75);
       background: rgba(12,18,26,.65);
@@ -155,16 +179,17 @@
       border-top: 1px solid var(--line);
     }
 
+    /* Bigger inputs that don't shrink */
     .cellInput{
       width: 100%;
-      max-width: 120px;
-      padding: 8px 10px;
+      min-width: 96px;     /* <-- prevents tiny cells */
+      padding: var(--cell-pad-y) var(--cell-pad-x);
       border-radius: 10px;
       border: 1px solid rgba(34,50,68,.75);
       background: var(--cell);
       color: var(--text);
       outline: none;
-      font-size: 15px;
+      font-size: var(--cell-font);
       text-align: right;
       font-variant-numeric: tabular-nums;
     }
@@ -181,6 +206,7 @@
     .muted{ color: var(--muted); }
     .hr{ height:1px; background: var(--line); margin: 12px 0; }
 
+    /* Bundles */
     .alert{
       border:1px solid var(--line);
       border-radius: 12px;
@@ -200,7 +226,7 @@
       justify-content: space-between;
       flex-wrap:wrap;
     }
-    .small{ font-size: 13px; }
+    .small{ font-size: 14px; }
     .bundleItem{
       border:1px solid var(--line);
       border-radius: 12px;
@@ -209,20 +235,16 @@
       margin-top: 8px;
     }
     .note{
-      font-size: 12px;
+      font-size: 13px;
       color: var(--muted);
       line-height: 1.35;
       margin-top: 10px;
     }
-    .right{
-      text-align:right;
-    }
-    .twoLine{
-      line-height: 1.2;
-    }
-    .twoLine .muted{ font-size: 12px; }
+    .right{ text-align:right; }
 
-    @media (max-width: 1100px){
+    /* Responsiveness: on narrower screens, stack panels and let bundle section be full width */
+    @media (max-width: 1200px){
+      :root{ --bundle-width: 1fr; }
       .layout{ grid-template-columns: 1fr; }
     }
   </style>
@@ -311,16 +333,13 @@
   const defaultState = () => ({
     version: 2,
     createdAt: new Date().toISOString(),
-    // counts[value][lotIndex] = number of units (notes/coins)
     counts: Object.fromEntries(ALL.map(v => [String(v), Array(10).fill(0)])),
     locked: Object.fromEntries(ALL.map(v => [String(v), Array(10).fill(false)])),
-    // bundles: {ts, denom, count:85, value}
     bundles: []
   });
 
   let state = load();
 
-  // ---------- Build grid ----------
   function buildGrid(){
     const table = el.gridTable;
     table.innerHTML = "";
@@ -338,7 +357,6 @@
       hr.appendChild(th);
     });
 
-    // “Entered” + “Left” + “Value”
     const thEntered = document.createElement("th");
     thEntered.textContent = "Entered (count)";
     hr.appendChild(thEntered);
@@ -398,19 +416,16 @@
         tr.appendChild(td);
       }
 
-      // Entered count cell
       const tdEntered = document.createElement("td");
       tdEntered.className = "mono right";
       tdEntered.dataset.enteredCount = String(denom);
       tr.appendChild(tdEntered);
 
-      // Left unbundled cell
       const tdLeft = document.createElement("td");
       tdLeft.className = "mono right";
       tdLeft.dataset.leftCount = String(denom);
       tr.appendChild(tdLeft);
 
-      // Entered value cell
       const tdVal = document.createElement("td");
       tdVal.className = "mono right";
       tdVal.dataset.enteredValue = String(denom);
@@ -422,7 +437,6 @@
 
     table.appendChild(tbody);
 
-    // Footer: lot totals + session total
     const tfoot = document.createElement("tfoot");
     const fr = document.createElement("tr");
 
@@ -439,7 +453,7 @@
 
     const fEntered = document.createElement("td");
     fEntered.className = "mono right";
-    fEntered.textContent = ""; // totals columns not needed here
+    fEntered.textContent = "";
     fr.appendChild(fEntered);
 
     const fLeft = document.createElement("td");
@@ -506,7 +520,6 @@
     }
   }
 
-  // ---------- Totals / Unbundled ----------
   function sumEnteredCountsByDenom(){
     const totals = Object.fromEntries(ALL.map(v => [String(v), 0]));
     ALL.forEach(v => {
@@ -527,12 +540,9 @@
     const entered = sumEnteredCountsByDenom();
     const bundled = sumBundlesByDenom();
     const left = Object.fromEntries(ALL.map(v => [String(v), entered[String(v)] || 0]));
-
-    // subtract bundles from NOTES only
     NOTES.forEach(d => {
       left[String(d)] = (entered[String(d)] || 0) - (bundled[String(d)] || 0);
     });
-
     return left;
   }
 
@@ -560,7 +570,6 @@
     return count * denom;
   }
 
-  // ---------- Bundles ----------
   function eligibleDenoms(){
     const left = leftUnbundledByDenom();
     return NOTES.filter(d => (left[String(d)] || 0) >= BUNDLE_SIZE).sort((a,b)=>b-a);
@@ -577,7 +586,7 @@
       value: denom * BUNDLE_SIZE
     });
     save();
-    render(); // this updates “Left (unbundled)” in the grid immediately
+    render();
   }
 
   function undoLastBundle(){
@@ -587,7 +596,6 @@
     render();
   }
 
-  // ---------- Render ----------
   function render(){
     const entered = sumEnteredCountsByDenom();
     const left = leftUnbundledByDenom();
@@ -595,11 +603,9 @@
     // Update right-side summary columns per denom
     ALL.forEach(v => {
       const key = String(v);
-
       const tdEntered = document.querySelector(`[data-entered-count="${cssEscape(key)}"]`);
       const tdLeft = document.querySelector(`[data-left-count="${cssEscape(key)}"]`);
       const tdVal = document.querySelector(`[data-entered-value="${cssEscape(key)}"]`);
-
       if (tdEntered) tdEntered.textContent = String(entered[key] || 0);
       if (tdLeft) tdLeft.textContent = String(left[key] || 0);
       if (tdVal) tdVal.textContent = money(enteredValueForDenom(key));
@@ -619,11 +625,9 @@
     el.sessionTotal.textContent = money(sessionTotalValue());
     el.bundleCount.textContent = String(state.bundles.length);
 
-    // Unbundled NOTES count only (what matters for the machine)
     const unbundledNotes = NOTES.reduce((a,d)=>a + (left[String(d)] || 0), 0);
     el.unbundledNotes.textContent = String(unbundledNotes);
 
-    // Negative warning (notes only)
     const hasNeg = NOTES.some(d => (left[String(d)] || 0) < 0);
     el.negWarn.style.display = hasNeg ? "block" : "none";
 
@@ -684,7 +688,7 @@
     }
   }
 
-  // ---------- Buttons ----------
+  // Buttons
   el.undoBtn.addEventListener("click", undoLastBundle);
 
   el.exportBtn.addEventListener("click", () => {
@@ -714,7 +718,7 @@
     document.querySelectorAll(".cellInput").forEach(inp => inp.classList.remove("locked"));
   });
 
-  // ---------- Storage ----------
+  // Storage
   function load(){
     try{
       const raw = localStorage.getItem(LS_KEY);
@@ -762,9 +766,8 @@
     localStorage.setItem(LS_KEY, JSON.stringify(state));
   }
 
-  // ---------- Helpers ----------
+  // Helpers
   function denomLabel(v){
-    // notes: "$100"; coins: "$2", "$1", "50c", "20c", "10c"
     if (v >= 5) return `$${v}`;
     if (v === 2) return "$2";
     if (v === 1) return "$1";
@@ -775,7 +778,6 @@
   }
 
   function money(n){
-    // Show cents only if needed (coins make that possible)
     const hasCents = Math.abs(n - Math.round(n)) > 1e-9;
     return "$" + (n || 0).toLocaleString(undefined, {
       minimumFractionDigits: hasCents ? 2 : 0,
@@ -790,9 +792,7 @@
     } catch { return iso; }
   }
 
-  // for attribute selectors with decimals
   function cssEscape(s){
-    // minimal escape for our use-case (decimals)
     return String(s).replace(/"/g, '\\"');
   }
 
@@ -801,7 +801,7 @@
     if (first) { first.focus(); first.select(); }
   }
 
-  // ---------- Start ----------
+  // Start
   buildGrid();
   render();
   focusFirst();

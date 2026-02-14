@@ -149,32 +149,10 @@
       white-space: nowrap;
       font-size: var(--th-font);
     }
-    thead tr.labelsRow th{
-      top: 44px;
-      background: rgba(14,22,32,.98);
-      padding: 8px 10px;
-      border-bottom: 1px solid rgba(34,50,68,.7);
-    }
     thead th:first-child{
       text-align:left;
       padding-left: 14px;
       z-index: 3;
-    }
-    thead tr.labelsRow th:first-child{ z-index: 4; }
-    .lotLabelInput{
-      width: 100%;
-      padding: 8px 10px;
-      border-radius: 10px;
-      border: 1px solid rgba(34,50,68,.75);
-      background: #0a121a;
-      color: var(--text);
-      outline:none;
-      font-size: 14px;
-      text-align: center;
-    }
-    .lotLabelInput:focus{
-      border-color: var(--focus);
-      box-shadow: 0 0 0 3px rgba(58,160,255,.18);
     }
 
     tbody td, tfoot td{
@@ -225,6 +203,7 @@
       border-color: rgba(31,143,74,.65) !important;
       background: rgba(31,143,74,.08) !important;
     }
+
     .mono{ font-variant-numeric: tabular-nums; }
     .muted{ color: var(--muted); }
     .hr{ height:1px; background: var(--line); margin: 12px 0; }
@@ -243,6 +222,8 @@
       color: var(--muted);
       background: rgba(8,12,18,.35);
       font-weight: 800;
+      min-width: 42px;
+      text-align:center;
     }
     .badge.ready{ border-color: rgba(31,143,74,.65); color:#c8ffd9; background: rgba(31,143,74,.08); }
     .badge.near{  border-color: rgba(184,139,0,.7);  color:#ffe6a8; background: rgba(184,139,0,.08); }
@@ -288,7 +269,6 @@
       margin-top: 8px;
       font-size: 13px;
     }
-
     .toolsRow{
       display:flex;
       gap:10px;
@@ -304,10 +284,7 @@
       .card{ box-shadow:none; background:#fff; border: 1px solid #ddd; }
       .tableWrap{ border: 1px solid #ddd; background:#fff; }
       table{ font-size: 11px; }
-      .cellInput{ display:none; }
-      .printOnly{ display:block !important; }
     }
-    .printOnly{ display:none; }
 
     @media (max-width: 1300px){
       :root{ --bundle-width: 1fr; }
@@ -320,12 +297,13 @@
   <div class="hdrRow">
     <div class="pill"><span class="muted">Session total</span> <strong id="sessionTotal">$0</strong></div>
     <div class="pill"><span class="muted">Bundles</span> <strong id="bundleCount">0</strong></div>
-    <div class="pill"><span class="muted">Unbundled notes</span> <strong id="unbundledNotes">0</strong></div>
+    <div class="pill"><span class="muted">Notes left (after bundling)</span> <strong id="afterBundlingNotes">0</strong></div>
 
     <button class="btn btnGhost" id="clearLocksBtn" type="button">Clear locks</button>
+    <button class="btn" id="consolidateBtn" type="button">Consolidate → Lot 1</button>
     <button class="btn" id="exportJsonBtn" type="button">Export JSON</button>
     <button class="btn" id="exportCsvBtn" type="button">Export CSV</button>
-    <button class="btn" id="printBtn" type="button">Print summary</button>
+    <button class="btn" id="printBtn" type="button">Print</button>
     <button class="btn btnBad" id="resetBtn" type="button">Reset</button>
   </div>
 </header>
@@ -336,9 +314,9 @@
     <div class="card">
       <h2>Lots grid (notes + coins)</h2>
       <div class="sub noPrint">
-        Type counts into the grid. Any non-empty number “locks in” automatically (green outline).<br/>
-        Navigation: <strong>Enter</strong> moves <strong>down</strong> (same lot column). <strong>Shift+Enter</strong> moves up. Arrow keys work like Excel.
-        <strong>Ctrl+D</strong> = copy from above. <strong>Ctrl+0</strong> = clear cell.
+        Enter counts into the grid. Any non-empty number “locks in” automatically.<br/>
+        Navigation: <strong>Enter</strong> down, <strong>Shift+Enter</strong> up. Arrow keys like Excel.
+        <strong>Ctrl+D</strong> copy from above. <strong>Ctrl+0</strong> clear cell.
       </div>
 
       <div class="tableWrap">
@@ -346,18 +324,16 @@
       </div>
 
       <div class="note noPrint">
-        Bundling is <strong>notes only</strong> (85 of the same denomination). Coins are tracked for totals but never bundled.
-        “Left (unbundled)” reflects what remains after bundles are extracted or after Final Bundles are created.
+        Bundling is <strong>notes only</strong> (85 of the same denomination). Coins are tracked for totals but never bundled.<br/>
+        The “Left (after bundling)” column shows the <strong>remainder</strong> after taking out as many full 85s as possible.
       </div>
-
-      <div class="printOnly" id="printSummaryLeft"></div>
     </div>
 
     <!-- BUNDLES -->
     <div class="card">
       <h2>Bundles</h2>
       <div class="sub noPrint">
-        Extract 85-note bundles as you go. When you’re done, use <strong>Final Bundles</strong> to split the remaining notes into mixed bundles of up to <strong>85</strong> each.
+        Extract 85-note bundles as you go. When done, use <strong>Final Bundles</strong> to split remaining notes into mixed bundles of up to <strong>85</strong> each.
       </div>
 
       <div class="toolsRow noPrint">
@@ -380,11 +356,9 @@
       <div id="bundleLog"></div>
 
       <div class="note" id="negWarn" style="display:none;">
-        <strong style="color:#ffb4b4;">Warning:</strong> One or more note denominations went negative after bundles (usually caused by editing lot counts down after extracting).
-        Fix by adjusting the grid back up, or undo bundles.
+        <strong style="color:#ffb4b4;">Warning:</strong> One or more note denominations went negative after bundles.
+        Undo bundles or adjust counts back up.
       </div>
-
-      <div class="printOnly" id="printSummaryRight"></div>
     </div>
   </div>
 </div>
@@ -395,16 +369,16 @@
   const COINS = [2, 1, 0.5, 0.2, 0.1];
   const ALL = [...NOTES, ...COINS];
 
-  const LOTS_DEFAULT = Array.from({length: 10}, (_, i) => `Lot ${i+1}`);
+  const LOTS = Array.from({length: 10}, (_, i) => `Lot ${i+1}`);
   const BUNDLE_SIZE = 85;
   const READY_NEAR = 70;
-  const LS_KEY = "banking85_grid_v5";
+  const LS_KEY = "banking85_grid_v6";
 
   const el = {
     gridTable: document.getElementById("gridTable"),
     sessionTotal: document.getElementById("sessionTotal"),
     bundleCount: document.getElementById("bundleCount"),
-    unbundledNotes: document.getElementById("unbundledNotes"),
+    afterBundlingNotes: document.getElementById("afterBundlingNotes"),
     alerts: document.getElementById("alerts"),
     bundleLog: document.getElementById("bundleLog"),
     undoBtn: document.getElementById("undoBtn"),
@@ -415,25 +389,29 @@
     printBtn: document.getElementById("printBtn"),
     resetBtn: document.getElementById("resetBtn"),
     clearLocksBtn: document.getElementById("clearLocksBtn"),
+    consolidateBtn: document.getElementById("consolidateBtn"),
     negWarn: document.getElementById("negWarn"),
     coinSummary: document.getElementById("coinSummary"),
     lockBtn: document.getElementById("lockBtn"),
-    printSummaryLeft: document.getElementById("printSummaryLeft"),
-    printSummaryRight: document.getElementById("printSummaryRight"),
   };
 
   const defaultState = () => ({
-    version: 5,
+    version: 6,
     createdAt: new Date().toISOString(),
-    lotLabels: [...LOTS_DEFAULT],
     counts: Object.fromEntries(ALL.map(v => [String(v), Array(10).fill(0)])),
     lockedCells: Object.fromEntries(ALL.map(v => [String(v), Array(10).fill(false)])),
     bundles: [],               // type:"single" or "final"
-    finalBundleCreated: false, // "finalised" state
+    finalBundleCreated: false,
     sessionLocked: false
   });
 
   let state = load();
+
+  function leftAfterBundlingCount(currentLeft){
+    if (!Number.isFinite(currentLeft)) return 0;
+    if (currentLeft < 0) return currentLeft;        // keep negatives visible
+    return currentLeft % BUNDLE_SIZE;               // remainder after pulling full 85s
+  }
 
   // ---------- Grid ----------
   function buildGrid(){
@@ -441,55 +419,23 @@
     table.innerHTML = "";
 
     const thead = document.createElement("thead");
-
     const hr = document.createElement("tr");
+
     const th0 = document.createElement("th");
     th0.textContent = "Denomination";
     hr.appendChild(th0);
 
     for (let i=0;i<10;i++){
       const th = document.createElement("th");
-      th.textContent = state.lotLabels[i] || LOTS_DEFAULT[i];
-      th.dataset.lotHeader = String(i);
+      th.textContent = LOTS[i];
       hr.appendChild(th);
     }
 
     const thEntered = document.createElement("th"); thEntered.textContent = "Entered (count)"; hr.appendChild(thEntered);
-    const thLeft   = document.createElement("th"); thLeft.textContent = "Left (unbundled)"; hr.appendChild(thLeft);
+    const thLeft   = document.createElement("th"); thLeft.textContent = "Left (after bundling)"; hr.appendChild(thLeft);
     const thVal    = document.createElement("th"); thVal.textContent = "Entered ($)"; hr.appendChild(thVal);
 
     thead.appendChild(hr);
-
-    const lr = document.createElement("tr");
-    lr.className = "labelsRow";
-
-    const l0 = document.createElement("th");
-    l0.innerHTML = `<span class="muted">Lot labels</span>`;
-    lr.appendChild(l0);
-
-    for (let i=0;i<10;i++){
-      const th = document.createElement("th");
-      const inp = document.createElement("input");
-      inp.className = "lotLabelInput";
-      inp.type = "text";
-      inp.value = state.lotLabels[i] || "";
-      inp.placeholder = LOTS_DEFAULT[i];
-      inp.disabled = !!state.sessionLocked;
-      inp.addEventListener("input", () => {
-        state.lotLabels[i] = inp.value.trim() || LOTS_DEFAULT[i];
-        save();
-        const top = table.querySelector(`th[data-lot-header="${i}"]`);
-        if (top) top.textContent = state.lotLabels[i];
-      });
-      th.appendChild(inp);
-      lr.appendChild(th);
-    }
-
-    lr.appendChild(document.createElement("th"));
-    lr.appendChild(document.createElement("th"));
-    lr.appendChild(document.createElement("th"));
-
-    thead.appendChild(lr);
     table.appendChild(thead);
 
     const tbody = document.createElement("tbody");
@@ -781,8 +727,6 @@
     if (state.finalBundleCreated || state.sessionLocked) return;
 
     const left = leftUnbundledByDenom();
-
-    // Remaining unbundled notes by denom (ignore negatives by clamping at 0)
     const rem = Object.fromEntries(NOTES.map(d => [String(d), Math.max(0, left[String(d)] || 0)]));
 
     const totalNotes = NOTES.reduce((a,d)=>a + rem[String(d)], 0);
@@ -791,10 +735,8 @@
       return;
     }
 
-    // Build N bundles of up to 85 notes each, greedily taking higher denoms first.
     const bundleCount = Math.ceil(totalNotes / BUNDLE_SIZE);
-    const groupId = new Date().toISOString(); // ties these finals together
-
+    const groupId = new Date().toISOString();
     const bundlesToAdd = [];
 
     for (let seq = 1; seq <= bundleCount; seq++){
@@ -802,7 +744,7 @@
       const breakdown = {};
       let value = 0;
 
-      for (const d of NOTES){ // NOTES already descending
+      for (const d of NOTES){
         const k = String(d);
         if (cap <= 0) break;
         const take = Math.min(rem[k] || 0, cap);
@@ -829,7 +771,6 @@
       });
     }
 
-    // Add in reverse so seq=1 ends up lower in the log, seq=last is most recent at top.
     for (let i = bundlesToAdd.length - 1; i >= 0; i--){
       state.bundles.unshift(bundlesToAdd[i]);
     }
@@ -846,7 +787,6 @@
 
     const b = state.bundles.shift();
 
-    // If we removed a final bundle, check whether any final bundles remain.
     if (b?.type === "final"){
       const stillHasFinal = state.bundles.some(x => x?.type === "final");
       if (!stillHasFinal){
@@ -865,6 +805,27 @@
     rebuildAndRender();
   }
 
+  // ---------- Consolidate ----------
+  function consolidateToLot1(){
+    if (state.sessionLocked) return;
+
+    // Sum everything into lot 0, clear lots 1..9
+    for (const v of ALL){
+      const k = String(v);
+      const sum = state.counts[k].reduce((a,b)=>a+(b||0),0);
+      state.counts[k][0] = sum;
+      for (let i=1;i<10;i++) state.counts[k][i] = 0;
+
+      // Locks: keep lot 1 locked if non-zero, clear others
+      state.lockedCells[k][0] = (sum > 0);
+      for (let i=1;i<10;i++) state.lockedCells[k][i] = false;
+    }
+
+    save();
+    rebuildAndRender();
+    focusFirst();
+  }
+
   // ---------- Render ----------
   function render(){
     const entered = sumEnteredCountsByDenom();
@@ -877,39 +838,48 @@
       const tdVal = document.querySelector(`[data-entered-value="${cssEscape(key)}"]`);
 
       if (tdEntered) tdEntered.textContent = String(entered[key] || 0);
-      if (tdLeft){
-  const currentLeft = left[key] || 0;
-
-  // Notes: show remainder after removing as many 85s as possible
-  // Coins: show actual count (no bundling)
-  const displayLeft = NOTES.includes(Number(v))
-    ? leftAfterBundlingCount(currentLeft)
-    : currentLeft;
-
-  tdLeft.textContent = String(displayLeft);
-}
-      if (tdVal) tdVal.textContent = money(enteredValueForDenom(key));
 
       if (tdLeft){
+        const currentLeft = left[key] || 0;
+        const displayLeft = NOTES.includes(Number(v))
+          ? leftAfterBundlingCount(currentLeft)
+          : currentLeft;
+
+        tdLeft.textContent = String(displayLeft);
+
         tdLeft.classList.remove("statusReady","statusNear","statusBad");
         if (NOTES.includes(Number(v))){
-          const val = left[key] || 0;
-          if (val < 0) tdLeft.classList.add("statusBad");
-          else if (val >= BUNDLE_SIZE) tdLeft.classList.add("statusReady");
-          else if (val >= READY_NEAR) tdLeft.classList.add("statusNear");
+          if (currentLeft < 0) tdLeft.classList.add("statusBad");
+          else if (displayLeft >= READY_NEAR && displayLeft < BUNDLE_SIZE) tdLeft.classList.add("statusNear");
+          // NOTE: we intentionally do NOT make remainder >=85 (it never is). Ready is handled by badge.
         }
       }
 
+      if (tdVal) tdVal.textContent = money(enteredValueForDenom(key));
+
+      // Badge shows bundle availability (based on CURRENT left)
       const badge = document.querySelector(`[data-badge="${cssEscape(key)}"]`);
       if (badge){
         badge.classList.remove("ready","near","bad");
         badge.textContent = "";
         if (NOTES.includes(Number(v))){
-          const val = left[key] || 0;
-          if (val < 0){ badge.textContent = "NEG"; badge.classList.add("bad"); }
-          else if (val >= BUNDLE_SIZE){ badge.textContent = `x${Math.floor(val / BUNDLE_SIZE)}`; }
-          else if (val >= READY_NEAR){ badge.textContent = "NEAR"; badge.classList.add("near"); }
-          else { badge.textContent = ""; }
+          const currentLeft = left[key] || 0;
+          if (currentLeft < 0){
+            badge.textContent = "NEG";
+            badge.classList.add("bad");
+          } else {
+            const fullBundles = Math.floor(currentLeft / BUNDLE_SIZE);
+            const remainder = currentLeft % BUNDLE_SIZE;
+            if (fullBundles >= 1){
+              badge.textContent = `x${fullBundles}`;
+              badge.classList.add("ready");
+            } else if (remainder >= READY_NEAR){
+              badge.textContent = "NEAR";
+              badge.classList.add("near");
+            } else {
+              badge.textContent = "";
+            }
+          }
         }
       }
     }
@@ -925,11 +895,12 @@
     el.sessionTotal.textContent = money(sessionTotalValue());
     el.bundleCount.textContent = String(state.bundles.length);
 
-const unbundledNotes = NOTES.reduce((a,d)=>{
-  const currentLeft = left[String(d)] || 0;
-  return a + leftAfterBundlingCount(currentLeft);
-}, 0);
-el.unbundledNotes.textContent = String(unbundledNotes);
+    // Header pill: total remainder notes after bundling
+    const afterNotes = NOTES.reduce((a,d)=>{
+      const currentLeft = left[String(d)] || 0;
+      return a + leftAfterBundlingCount(currentLeft);
+    }, 0);
+    el.afterBundlingNotes.textContent = String(afterNotes);
 
     el.finalBundleBtn.disabled = state.finalBundleCreated || state.sessionLocked;
     el.extractMaxBtn.disabled = state.finalBundleCreated || state.sessionLocked;
@@ -937,9 +908,12 @@ el.unbundledNotes.textContent = String(unbundledNotes);
     el.lockBtn.textContent = state.sessionLocked ? "Unlock session" : "Lock session";
     el.lockBtn.classList.toggle("btnWarn", state.sessionLocked);
 
+    el.consolidateBtn.disabled = state.sessionLocked;
+
     const hasNeg = NOTES.some(d => (left[String(d)] || 0) < 0);
     el.negWarn.style.display = hasNeg ? "block" : "none";
 
+    // Alerts
     el.alerts.innerHTML = "";
 
     if (state.sessionLocked){
@@ -972,22 +946,25 @@ el.unbundledNotes.textContent = String(unbundledNotes);
         el.alerts.appendChild(div);
       } else {
         for (const d of elig){
-          const available = left[String(d)] || 0;
+          const currentLeft = left[String(d)] || 0;
+          const bundlesAvail = Math.floor(currentLeft / BUNDLE_SIZE);
           const div = document.createElement("div");
           div.className = "alert good";
           div.innerHTML = `
-            <div class="alertTitle">READY: ${BUNDLE_SIZE} × $${d}</div>
+            <div class="alertTitle">READY: 85 × $${d} <span class="muted">(x${bundlesAvail} available)</span></div>
             <div class="row small mono">
-              <div><span class="muted">Left (unbundled):</span> <strong>${available}</strong></div>
-              <button class="btn btnGood" type="button">Extract</button>
+              <div><span class="muted">Current count:</span> <strong>${currentLeft}</strong></div>
+              <button class="btn btnGood" type="button">Extract 1</button>
             </div>`;
-          div.querySelector("button").disabled = state.sessionLocked;
-          div.querySelector("button").addEventListener("click", () => extractBundle(d));
+          const btn = div.querySelector("button");
+          btn.disabled = state.sessionLocked;
+          btn.addEventListener("click", () => extractBundle(d));
           el.alerts.appendChild(div);
         }
       }
     }
 
+    // Coin summary
     const coins = coinTotals();
     el.coinSummary.innerHTML = `
       <div class="row">
@@ -1002,6 +979,7 @@ el.unbundledNotes.textContent = String(unbundledNotes);
       </div>
     `;
 
+    // Bundle log
     el.bundleLog.innerHTML = "";
     if (state.bundles.length === 0){
       const div = document.createElement("div");
@@ -1046,11 +1024,9 @@ el.unbundledNotes.textContent = String(unbundledNotes);
         el.bundleLog.appendChild(div);
       });
     }
-
-    // (Print/export summary still works; omitted here to keep this version focused)
   }
 
-  // ---------- Exports / print (same as before) ----------
+  // ---------- Exports / print ----------
   function exportJson(){
     const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
     downloadBlob(blob, "banking-grid-session.json");
@@ -1058,8 +1034,7 @@ el.unbundledNotes.textContent = String(unbundledNotes);
 
   function exportCsv(){
     const entered = sumEnteredCountsByDenom();
-
-    const header = ["Denomination", ...state.lotLabels.map(x => x || ""), "EnteredCount", "EnteredValue"].join(",");
+    const header = ["Denomination", ...LOTS, "EnteredCount", "EnteredValue"].join(",");
     const rows = ALL.map(v => {
       const k = String(v);
       const denomName = denomLabel(Number(v));
@@ -1093,9 +1068,7 @@ el.unbundledNotes.textContent = String(unbundledNotes);
     downloadBlob(new Blob([bundlesCsv], {type:"text/csv"}), "bundles.csv");
   }
 
-  function printSummary(){
-    window.print();
-  }
+  function printPage(){ window.print(); }
 
   // ---------- Buttons ----------
   el.undoBtn.addEventListener("click", undoLastBundle);
@@ -1108,10 +1081,15 @@ el.unbundledNotes.textContent = String(unbundledNotes);
 
   el.exportJsonBtn.addEventListener("click", exportJson);
   el.exportCsvBtn.addEventListener("click", exportCsv);
-  el.printBtn.addEventListener("click", printSummary);
+  el.printBtn.addEventListener("click", printPage);
+
+  el.consolidateBtn.addEventListener("click", () => {
+    if (!confirm("Consolidate all lots into Lot 1 and clear Lots 2–10?")) return;
+    consolidateToLot1();
+  });
 
   el.resetBtn.addEventListener("click", () => {
-    if (!confirm("Reset everything (grid + bundles + labels)?")) return;
+    if (!confirm("Reset everything (grid + bundles)?")) return;
     state = defaultState();
     save();
     rebuildAndRender();
@@ -1131,11 +1109,6 @@ el.unbundledNotes.textContent = String(unbundledNotes);
       if (!raw) return defaultState();
       const parsed = JSON.parse(raw);
       const st = defaultState();
-
-      if (Array.isArray(parsed?.lotLabels)){
-        st.lotLabels = parsed.lotLabels.slice(0,10).map((x,i)=> (typeof x === "string" && x.trim()) ? x.trim() : LOTS_DEFAULT[i]);
-        while (st.lotLabels.length < 10) st.lotLabels.push(LOTS_DEFAULT[st.lotLabels.length]);
-      }
 
       if (parsed?.counts){
         for (const v of ALL){
@@ -1247,14 +1220,6 @@ el.unbundledNotes.textContent = String(unbundledNotes);
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-function leftAfterBundlingCount(currentLeft){
-  if (!Number.isFinite(currentLeft)) return 0;
-  if (currentLeft < 0) return currentLeft;     // keep negatives visible
-  return currentLeft % BUNDLE_SIZE;            // remainder after taking out full 85s
-}
-
-
-  
   function csvCell(s){
     const str = String(s ?? "");
     if (/[",\n]/.test(str)) return `"${str.replace(/"/g,'""')}"`;
